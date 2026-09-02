@@ -1,0 +1,49 @@
+﻿# ============================================================
+# Git Ignore — CRYPTO ML Project
+# ============================================================
+
+# --- Raw & processed data (never commit) ---
+data/raw/
+data/processed/
+*.csv
+*.pt
+*.pkl
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# --- Virtual environment ---
+.venv/
+venv/
+env/
+
+# --- Jupyter ---
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# --- Results & model weights ---
+results/plots/*.png
+results/plots/*.pdf
+*.pth
+*.ckpt
+
+# --- IDE ---
+.vscode/
+.idea/
+*.swp
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Secrets / keys ---
+*.key
+*.pem
+secrets.yaml

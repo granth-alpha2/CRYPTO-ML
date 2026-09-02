@@ -1,0 +1,59 @@
+﻿# ============================================================
+# CRYPTO ML — Master Configuration
+# Edit this file to tune hyperparameters and paths
+# ============================================================
+
+# --- Paths ---
+paths:
+  raw_data:       data/raw/
+  processed_data: data/processed/
+  results:        results/
+  plots:          results/plots/
+  model_save:     results/model.pth
+
+# --- Dataset ---
+dataset:
+  name: elliptic
+  node_features: 166
+  num_classes: 2           # 0=licit, 1=illicit (unknown excluded)
+  train_ratio: 0.70
+  val_ratio:   0.10
+  test_ratio:  0.20
+
+# --- GNN Model ---
+model:
+  type: GCN                # Options: GCN | GIN
+  hidden_dim: 128
+  num_layers: 2            # Keep low for HE compatibility
+  dropout: 0.3
+  activation: relu         # Options: relu | poly (for HE)
+
+# --- Training ---
+train:
+  epochs: 100
+  lr: 0.001
+  weight_decay: 0.0005
+  batch_size: null         # Full-graph training (null = no mini-batching)
+  early_stopping_patience: 10
+  seed: 42
+
+# --- Quantization ---
+quantize:
+  bits: 8                  # 8-bit post-training quantization
+  poly_degree: 2           # Degree of ReLU polynomial approximation
+  # Polynomial: f(x) = a0 + a1*x + a2*x^2
+  poly_coeffs: [0.5, 0.5, 0.0]   # Initial approx — will be fit from data
+
+# --- Homomorphic Encryption ---
+he:
+  scheme: CKKS             # Options: CKKS (for real-valued ML)
+  poly_modulus_degree: 8192
+  coeff_mod_bit_sizes: [60, 40, 40, 60]
+  scale: 40                # 2^40 — balances precision vs depth
+  backend: tenseal         # Options: tenseal | concrete_ml
+
+# --- Evaluation ---
+eval:
+  threshold: 0.5           # Classification decision boundary
+  metrics: [accuracy, f1, precision, recall, auc]
+  measure_latency: true

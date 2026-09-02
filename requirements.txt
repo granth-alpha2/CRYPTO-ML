@@ -1,0 +1,38 @@
+﻿# ============================================================
+# CRYPTO ML — Privacy-Preserving GNN on Bitcoin Transactions
+# Requirements (pinned for reproducibility)
+# ============================================================
+
+# --- Core ML ---
+torch==2.3.0
+torchvision==0.18.0
+
+# --- Graph Neural Networks ---
+torch-geometric==2.5.3
+torch-scatter==2.1.2
+torch-sparse==0.6.18
+
+# --- Homomorphic Encryption ---
+tenseal==0.3.14          # CKKS via Microsoft SEAL
+# concrete-ml==1.5.0     # Zama alternative — uncomment to use
+
+# --- Data Processing ---
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.0
+networkx==3.3
+
+# --- Visualization ---
+matplotlib==3.9.0
+seaborn==0.13.2
+
+# --- Experiment Tracking ---
+pyyaml==6.0.1            # config loading
+tqdm==4.66.4             # progress bars
+
+# --- Notebooks ---
+jupyter==1.0.0
+ipykernel==6.29.4
+
+# --- Optional: Weights & Biases tracking ---
+# wandb==0.17.0
