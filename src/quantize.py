@@ -182,12 +182,12 @@ def print_quantization_summary(original: nn.Module, quantized: nn.Module):
     orig_mb  = orig_params * 4 / 1e6   # float32 = 4 bytes
     quant_mb = orig_params * 1 / 1e6   # int8    = 1 byte (approx)
 
-    print("\n[quantize] ── Quantization Summary ──────────────────")
+    print("\n[quantize] -- Quantization Summary ------------------")
     print(f"  Parameters     : {orig_params:,}")
     print(f"  Original size  : {orig_mb:.2f} MB  (float32)")
     print(f"  Quantized size : {quant_mb:.2f} MB  (int8 approx)")
     print(f"  Size reduction : {orig_mb / quant_mb:.1f}x")
-    print("─────────────────────────────────────────────────────\n")
+    print("-----------------------------------------------------\n")
 
 
 if __name__ == "__main__":

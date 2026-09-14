@@ -1,4 +1,4 @@
-﻿"""
+"""
 evaluate.py
 ===========
 Comprehensive evaluation and comparison across all pipeline stages:
@@ -30,7 +30,13 @@ import time
 import numpy as np
 import torch
 import yaml
-import matplotlib.pyplot as plt
+
+try:
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_AVAILABLE = True
+except Exception as _e:
+    plt = None
+    MATPLOTLIB_AVAILABLE = False
 from sklearn.metrics import (
     accuracy_score, f1_score, precision_score,
     recall_score, roc_auc_score, classification_report
@@ -127,10 +133,13 @@ def evaluate_all_stages(cfg: dict):
     metrics  = []
     latencies = []
 
-    # ── Stage 1: Plaintext GCN ─────────────────────────────────────
-    print("\n[evaluate] ── Stage 1: Plaintext GCN ──────────────────")
+    # -- Stage 1: Plaintext GCN -------------------------------------
+    print("\n[evaluate] -- Stage 1: Plaintext GCN ------------------")
     model_pt = build_model(cfg)
-    model_pt.load_state_dict(torch.load(model_path, map_location=device))
+    try:
+        model_pt.load_state_dict(torch.load(model_path, map_location=device, weights_only=False))
+    except TypeError:
+        model_pt.load_state_dict(torch.load(model_path, map_location=device))
 
     preds_pt, probs_pt, lat_pt = plaintext_inference(model_pt, data, device)
     m1 = compute_all_metrics(preds_pt, probs_pt, true_labels, test_mask)
@@ -142,8 +151,8 @@ def evaluate_all_stages(cfg: dict):
     metrics.append(m1)
     latencies.append(lat_pt)
 
-    # ── Stage 2: Quantized + Poly-activation GCN ──────────────────
-    print("\n[evaluate] ── Stage 2: Quantized GCN (plaintext) ─────")
+    # -- Stage 2: Quantized + Poly-activation GCN ------------------
+    print("\n[evaluate] -- Stage 2: Quantized GCN (plaintext) -----")
     model_q = quantize_model(model_pt, bits=cfg["quantize"]["bits"])
     model_q = swap_activations(model_q)
 
@@ -159,8 +168,8 @@ def evaluate_all_stages(cfg: dict):
     metrics.append(m2)
     latencies.append(lat_q)
 
-    # ── Stage 3: Encrypted GCN ─────────────────────────────────────
-    print("\n[evaluate] ── Stage 3: HE Encrypted GCN ──────────────")
+    # -- Stage 3: Encrypted GCN -------------------------------------
+    print("\n[evaluate] -- Stage 3: HE Encrypted GCN --------------")
     print("  [!] Full encrypted inference requires TenSEAL.")
     print("  [!] Run src/encrypt_infer.py for end-to-end HE benchmark.")
     print("  [!] Placeholder metrics shown — replace after HE run.")
@@ -172,7 +181,7 @@ def evaluate_all_stages(cfg: dict):
     metrics.append(m3)
     latencies.append(None)
 
-    # ── Save report CSV ────────────────────────────────────────────
+    # -- Save report CSV --------------------------------------------
     with open(report_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["stage", "accuracy", "f1_macro", "f1_illicit",
@@ -190,9 +199,24 @@ def evaluate_all_stages(cfg: dict):
             ])
     print(f"\n[evaluate] Report saved -> {report_path}")
 
-    # ── Plots ──────────────────────────────────────────────────────
+    # -- Plots ------------------------------------------------------
     plot_metric_comparison(stages[:2], metrics[:2], plots_dir)
     plot_latency_comparison(stages[:2], latencies[:2], plots_dir)
+
+    # -- Compliance Report & Alerts ---------------------------------
+    try:
+        from src.alert import ThresholdAlerter, AuditLogger, ComplianceReporter
+        test_indices = data.test_mask.nonzero(as_tuple=True)[0][:100].numpy()
+        sample_probs = probs_pt[data.test_mask.numpy()][:100, 1]
+        sample_ids   = [f"txn_{int(i):06d}" for i in test_indices]
+        alerter      = ThresholdAlerter(threshold=cfg["eval"]["threshold"], institution_id="INSTITUTION_A")
+        alerts       = alerter.check_batch(sample_ids, sample_probs)
+        log_path     = os.path.join(results_dir, "audit_log.jsonl")
+        AuditLogger(log_path).log_batch(alerts)
+        reporter     = ComplianceReporter(results_dir, log_path)
+        reporter.generate()
+    except Exception as e:
+        print(f"[evaluate] Notice: Alert/Compliance report generation skipped ({e})")
 
     return stages, metrics, latencies
 
@@ -203,6 +227,9 @@ def evaluate_all_stages(cfg: dict):
 
 def plot_metric_comparison(stages: list, metrics: list, plots_dir: str):
     """Bar chart comparing F1 scores across stages."""
+    if not MATPLOTLIB_AVAILABLE or plt is None:
+        print("[evaluate] Note: Matplotlib unavailable - skipping offline PNG generation (metrics saved to CSV).")
+        return
     metric_names = ["accuracy", "f1_macro", "f1_illicit", "auc_roc"]
     x = np.arange(len(metric_names))
     width = 0.35
@@ -230,6 +257,8 @@ def plot_metric_comparison(stages: list, metrics: list, plots_dir: str):
 
 def plot_latency_comparison(stages: list, latencies: list, plots_dir: str):
     """Bar chart of inference latency per stage."""
+    if not MATPLOTLIB_AVAILABLE or plt is None:
+        return
     fig, ax = plt.subplots(figsize=(7, 4))
     colors = ["steelblue", "darkorange"]
     ax.bar(stages, [l * 1000 for l in latencies], color=colors)

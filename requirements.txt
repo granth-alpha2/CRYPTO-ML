@@ -1,38 +1,42 @@
-﻿# ============================================================
-# CRYPTO ML — Privacy-Preserving GNN on Bitcoin Transactions
-# Requirements (pinned for reproducibility)
+# ============================================================
+# CRYPTO ML - Python Dependencies
+# Compatible with Python 3.10 - 3.14
 # ============================================================
 
-# --- Core ML ---
-torch==2.3.0
-torchvision==0.18.0
-
-# --- Graph Neural Networks ---
-torch-geometric==2.5.3
-torch-scatter==2.1.2
-torch-sparse==0.6.18
-
-# --- Homomorphic Encryption ---
-tenseal==0.3.14          # CKKS via Microsoft SEAL
-# concrete-ml==1.5.0     # Zama alternative — uncomment to use
+# --- Core PyTorch ---
+# NOTE: Do NOT pin exact torch version - let pip pick the latest
+# compatible build for your Python version automatically.
+torch>=2.9.0
+torch-geometric>=2.5.3
 
 # --- Data Processing ---
-pandas==2.2.2
-numpy==1.26.4
-scikit-learn==1.5.0
-networkx==3.3
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+networkx>=3.1
 
-# --- Visualization ---
-matplotlib==3.9.0
-seaborn==0.13.2
+# --- Visualisation ---
+matplotlib>=3.7.0
+seaborn>=0.12.0
 
-# --- Experiment Tracking ---
-pyyaml==6.0.1            # config loading
-tqdm==4.66.4             # progress bars
+# --- Configuration ---
+pyyaml>=6.0
+
+# --- Utilities ---
+tqdm>=4.65.0
 
 # --- Notebooks ---
-jupyter==1.0.0
-ipykernel==6.29.4
+jupyter>=1.0.0
+ipykernel>=6.0.0
 
-# --- Optional: Weights & Biases tracking ---
-# wandb==0.17.0
+# --- Dataset Download ---
+kaggle>=1.6.0
+opendatasets>=0.1.22
+
+# --- Web Dashboard & API Server ---
+fastapi>=0.110.0
+uvicorn>=0.28.0
+
+# --- Optional: Homomorphic Encryption ---
+# Uncomment when you want encrypted inference:
+# tenseal>=0.3.14

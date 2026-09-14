@@ -1,0 +1,4 @@
+stage,accuracy,f1_macro,f1_illicit,precision,recall,auc_roc,latency_s
+1. Plaintext GCN,0.8632,0.5674,0.2097,0.5556,0.6238,0.7615,0.3835
+2. Quantized GCN (plaintext),0.7789,0.5423,0.2132,0.5515,0.6895,0.7819,0.3446
+3. HE Encrypted GCN,N/A (run encrypt_infer.py),N/A (run encrypt_infer.py),N/A (run encrypt_infer.py),N/A (run encrypt_infer.py),N/A (run encrypt_infer.py),N/A (run encrypt_infer.py),N/A

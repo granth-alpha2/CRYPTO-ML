@@ -1,4 +1,4 @@
-﻿"""
+"""
 train.py
 ========
 Plaintext training loop for the GNN on the Elliptic dataset.
@@ -163,7 +163,10 @@ def train(cfg: dict):
     print(f"[train] Metrics CSV -> {metrics_path}")
 
     # Final test evaluation
-    model.load_state_dict(torch.load(model_path))
+    try:
+        model.load_state_dict(torch.load(model_path, map_location=device, weights_only=False))
+    except TypeError:
+        model.load_state_dict(torch.load(model_path, map_location=device))
     test_acc, test_f1 = evaluate(model, data, data.test_mask, device)
     print(f"[train] Test Accuracy: {test_acc:.4f} | Test F1: {test_f1:.4f}")
 

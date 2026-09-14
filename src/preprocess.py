@@ -1,4 +1,4 @@
-﻿"""
+"""
 preprocess.py
 =============
 Load the Elliptic Bitcoin dataset from raw CSVs and build a
@@ -41,26 +41,35 @@ def load_config(config_path: str) -> dict:
 
 
 def load_raw_data(raw_dir: str):
-    """Load raw Elliptic CSVs into dataframes."""
-    print("[preprocess] Loading raw CSVs...")
-
+    """Load raw Elliptic CSVs into dataframes with automatic fallback to data/sample/."""
     features_path = os.path.join(raw_dir, "elliptic_txs_features.csv")
     edges_path    = os.path.join(raw_dir, "elliptic_txs_edgelist.csv")
     classes_path  = os.path.join(raw_dir, "elliptic_txs_classes.csv")
 
-    for p in [features_path, edges_path, classes_path]:
-        if not os.path.exists(p):
+    if not all(os.path.exists(p) for p in [features_path, edges_path, classes_path]):
+        sample_dir = os.path.join("data", "sample")
+        sample_feats = os.path.join(sample_dir, "elliptic_txs_features.csv")
+        sample_edges = os.path.join(sample_dir, "elliptic_txs_edgelist.csv")
+        sample_cls   = os.path.join(sample_dir, "elliptic_txs_classes.csv")
+        if all(os.path.exists(p) for p in [sample_feats, sample_edges, sample_cls]):
+            features_path = sample_feats
+            edges_path    = sample_edges
+            classes_path  = sample_cls
+            print("[preprocess] Notice: Full dataset not present. Using bundled dataset from data/sample/...")
+        else:
             raise FileNotFoundError(
-                f"Missing file: {p}\n"
-                "Download the Elliptic dataset from Kaggle and place CSVs in data/raw/"
+                f"Missing dataset files in {raw_dir} and {sample_dir}.\n"
+                "Run: python download_dataset.py to download from Kaggle."
             )
+    else:
+        print("[preprocess] Loading full raw CSVs from data/raw/...")
 
     # Features: first column is txId, no header in original file
     feat_cols = ["txId"] + [f"f{i}" for i in range(1, 167)]
     df_feats  = pd.read_csv(features_path, header=None, names=feat_cols)
 
-    # Edges: no header
-    df_edges  = pd.read_csv(edges_path, header=None, names=["txId1", "txId2"])
+    # Edges: has header "txId1,txId2"
+    df_edges  = pd.read_csv(edges_path)
 
     # Classes: has header "txId,class"
     df_cls    = pd.read_csv(classes_path)
@@ -86,7 +95,7 @@ def build_pyg_graph(df_feats, df_edges, df_cls) -> Data:
     print("[preprocess] Building PyG graph...")
 
     # --- Merge class labels ---
-    df = df_feats.merge(df_cls, on="txId", how="left")
+    df = df_feats.merge(df_cls, on="txId", how="left").copy()
     df["class"] = df["class"].fillna("unknown")
 
     # --- Encode labels ---
@@ -168,10 +177,24 @@ def save_processed(data: Data, scaler, out_dir: str):
 
 
 def load_processed(processed_dir: str):
-    """Load previously saved PyG graph and scaler."""
+    """Load previously saved PyG graph and scaler with automatic fallback to sample graph."""
     graph_path  = os.path.join(processed_dir, "elliptic_graph.pt")
     scaler_path = os.path.join(processed_dir, "scaler.pkl")
-    data   = torch.load(graph_path)
+
+    if not os.path.exists(graph_path):
+        sample_graph = os.path.join("data", "sample", "sample_graph.pt")
+        sample_scaler = os.path.join("data", "sample", "scaler.pkl")
+        if os.path.exists(sample_graph):
+            graph_path = sample_graph
+            scaler_path = sample_scaler
+            print("[preprocess] Notice: Using bundled preprocessed graph from data/sample/sample_graph.pt")
+        else:
+            raise FileNotFoundError(f"No processed graph found at {graph_path} or {sample_graph}. Run preprocessing first.")
+
+    try:
+        data = torch.load(graph_path, weights_only=False)
+    except TypeError:
+        data = torch.load(graph_path)
     with open(scaler_path, "rb") as f:
         scaler = pickle.load(f)
     return data, scaler

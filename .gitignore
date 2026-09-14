@@ -1,15 +1,17 @@
-﻿# ============================================================
+# ============================================================
 # Git Ignore — CRYPTO ML Project
 # ============================================================
 
-# --- Raw & processed data (never commit) ---
+# --- Ignore Large Full-Scale Dataset (>100MB, exceeds GitHub limits) ---
 data/raw/
-data/processed/
-*.csv
-*.pt
-*.pkl
+data/processed/elliptic_graph.pt
 
-# --- Python ---
+# --- Allow Bundled Benchmark Dataset (all files under 30MB, ready for Git) ---
+!data/sample/
+!data/sample/**
+!data/processed/.gitkeep
+
+# --- Python Cache ---
 __pycache__/
 *.py[cod]
 *.pyo
@@ -19,31 +21,37 @@ dist/
 build/
 .eggs/
 
-# --- Virtual environment ---
+# --- Virtual Environments ---
 .venv/
 venv/
 env/
 
-# --- Jupyter ---
+# --- Jupyter Notebooks ---
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# --- Results & model weights ---
-results/plots/*.png
-results/plots/*.pdf
-*.pth
-*.ckpt
+# --- Results (Keep pre-trained model & evaluation reports) ---
+results/audit_log_test.jsonl
+results/client_sdk.log
 
-# --- IDE ---
+# Track pre-trained weights and demo evaluation results
+!results/model.pth
+!results/evaluation_report.csv
+!results/metrics.csv
+!results/compliance_report.html
+!results/compliance_report.csv
+!results/audit_log.jsonl
+!results/plots/
+!results/plots/.gitkeep
+
+# --- IDE & OS ---
 .vscode/
 .idea/
 *.swp
-
-# --- OS ---
 .DS_Store
 Thumbs.db
 
-# --- Secrets / keys ---
+# --- Secrets ---
 *.key
 *.pem
 secrets.yaml

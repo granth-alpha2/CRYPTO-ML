@@ -1,4 +1,4 @@
-﻿"""
+"""
 run_pipeline.py
 ===============
 One-click runner for the full CRYPTO ML pipeline.
@@ -49,23 +49,23 @@ def banner(text: str):
 
 
 def ok(msg: str):
-    print(f"  {C.GREEN}✔  {msg}{C.RESET}")
+    print(f"  {C.GREEN}OK  {msg}{C.RESET}")
 
 
 def warn(msg: str):
-    print(f"  {C.YELLOW}⚠  {msg}{C.RESET}")
+    print(f"  {C.YELLOW}!  {msg}{C.RESET}")
 
 
 def err(msg: str):
-    print(f"  {C.RED}✘  {msg}{C.RESET}")
+    print(f"  {C.RED}X  {msg}{C.RESET}")
 
 
 def info(msg: str):
-    print(f"  {C.CYAN}→  {msg}{C.RESET}")
+    print(f"  {C.CYAN}->  {msg}{C.RESET}")
 
 
 def divider():
-    print(f"{C.CYAN}{'─'*65}{C.RESET}")
+    print(f"{C.CYAN}{'-'*65}{C.RESET}")
 
 
 # -------------------------------------------------------------------
@@ -80,7 +80,7 @@ def check_python_version():
         err(f"Python 3.10+ required. You have {major}.{minor}.")
         err("Download from https://python.org")
         sys.exit(1)
-    ok(f"Python {major}.{minor} ✓")
+    ok(f"Python {major}.{minor} OK")
 
 
 def check_dependencies():
@@ -93,10 +93,10 @@ def check_dependencies():
         "sklearn":            "pip install scikit-learn",
         "yaml":               "pip install pyyaml",
         "tqdm":               "pip install tqdm",
-        "matplotlib":         "pip install matplotlib",
     }
     optional = {
-        "tenseal": "pip install tenseal   (needed for Step 4 — encrypted inference)",
+        "matplotlib": "pip install matplotlib (optional, for offline PNG charts)",
+        "tenseal":    "pip install tenseal   (needed for Step 4 - encrypted inference)",
     }
 
     all_good = True
@@ -104,16 +104,16 @@ def check_dependencies():
         try:
             __import__(lib)
             ok(f"{lib}")
-        except ImportError:
-            err(f"{lib} NOT found  →  Run: {install_cmd}")
+        except Exception as e:
+            err(f"{lib} NOT found or blocked ({e})  ->  Run: {install_cmd}")
             all_good = False
 
     for lib, note in optional.items():
         try:
             __import__(lib)
             ok(f"{lib} (optional)")
-        except ImportError:
-            warn(f"{lib} not installed  →  {note}")
+        except Exception:
+            warn(f"{lib} not available/blocked  ->  {note}")
 
     if not all_good:
         print()
@@ -121,11 +121,11 @@ def check_dependencies():
         info("Install everything at once:  pip install -r requirements.txt")
         sys.exit(1)
 
-    ok("All required libraries present.")
+    ok("All required core libraries present.")
 
 
 def check_dataset(cfg: dict) -> bool:
-    """Check whether raw Elliptic CSV files exist."""
+    """Check whether raw Elliptic CSV files or bundled sample dataset exist."""
     raw_dir = cfg["paths"]["raw_data"]
     files   = [
         "elliptic_txs_features.csv",
@@ -135,17 +135,21 @@ def check_dataset(cfg: dict) -> bool:
     missing = [f for f in files if not os.path.exists(os.path.join(raw_dir, f))]
 
     if missing:
-        err("Elliptic dataset CSV files not found in data/raw/")
+        sample_dir = os.path.join("data", "sample")
+        sample_missing = [f for f in files if not os.path.exists(os.path.join(sample_dir, f))]
+        if not sample_missing:
+            ok("Bundled sample dataset found in data/sample/ (8,800 nodes, 9,493 edges - ready to run)")
+            return True
+
+        err("Elliptic dataset CSV files not found in data/raw/ or data/sample/")
         print()
         print(f"  {C.YELLOW}Missing files:{C.RESET}")
         for f in missing:
             print(f"    - {f}")
         print()
         info("Download steps:")
-        info("  1. Go to  https://www.kaggle.com/datasets/ellipticco/elliptic-data-set")
-        info("  2. Sign in to Kaggle (free account)")
-        info("  3. Click Download  ->  extract the zip")
-        info(f"  4. Place the 3 CSV files in:  {os.path.abspath(raw_dir)}")
+        info("  1. Run: python download_dataset.py")
+        info("  2. Or download manually from: https://www.kaggle.com/datasets/ellipticco/elliptic-data-set")
         return False
 
     ok("All 3 Elliptic CSV files found in data/raw/")
@@ -156,11 +160,17 @@ def check_processed_graph(cfg: dict) -> bool:
     """Check whether processed PyG graph exists."""
     proc_dir   = cfg["paths"]["processed_data"]
     graph_path = os.path.join(proc_dir, "elliptic_graph.pt")
-    if not os.path.exists(graph_path):
-        warn("Processed graph not found — will run preprocessing first.")
+    sample_path = os.path.join("data", "sample", "sample_graph.pt")
+
+    if os.path.exists(graph_path):
+        ok("Processed graph found in data/processed/")
+        return True
+    elif os.path.exists(sample_path):
+        ok("Bundled processed graph found in data/sample/sample_graph.pt")
+        return True
+    else:
+        warn("Processed graph not found - will run preprocessing first.")
         return False
-    ok("Processed graph found in data/processed/")
-    return True
 
 
 def check_trained_model(cfg: dict) -> bool:
@@ -334,7 +344,7 @@ def main():
     )
     args = parser.parse_args()
 
-    # ── Load config ───────────────────────────────────────────────
+    # -- Load config -----------------------------------------------
     if not os.path.exists(args.config):
         err(f"Config file not found: {args.config}")
         sys.exit(1)
@@ -342,11 +352,11 @@ def main():
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
-    # ── Pre-flight ────────────────────────────────────────────────
+    # -- Pre-flight ------------------------------------------------
     check_python_version()
     check_dependencies()
 
-    # ── Single-step mode ─────────────────────────────────────────
+    # -- Single-step mode -----------------------------------------
     if args.step:
         step_map = {
             "preprocess": step_preprocess,
@@ -358,7 +368,7 @@ def main():
         success = run_step(f"Step: {args.step}", fn, cfg)
         sys.exit(0 if success else 1)
 
-    # ── Full pipeline ─────────────────────────────────────────────
+    # -- Full pipeline ---------------------------------------------
     results = {}
 
     # Step 1 — Preprocess
@@ -395,7 +405,7 @@ def main():
         if not success:
             warn("Encrypted inference failed — other steps still completed.")
 
-    # ── Summary ───────────────────────────────────────────────────
+    # -- Summary ---------------------------------------------------
     print_summary(results)
 
 

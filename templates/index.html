@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRYPTO ML | Privacy-Preserving GNN Bitcoin AML Dashboard</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Vis.js Network -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#080c14',
+            panel: '#0f172a',
+            panelBorder: '#1e293b',
+            accentGreen: '#10b981',
+            accentRed: '#ef4444',
+            accentBlue: '#3b82f6',
+            accentPurple: '#8b5cf6'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { background-color: #080c14; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .glass-card { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(30, 41, 59, 0.8); }
+    .glass-card:hover { border-color: rgba(59, 130, 246, 0.4); }
+    #network-canvas { height: 500px; width: 100%; border-radius: 0.75rem; background: #0b1120; }
+    .terminal-scroll::-webkit-scrollbar { width: 6px; }
+    .terminal-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <i class="fa-solid fa-shield-halved text-white text-lg"></i>
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">CRYPTO ML</span>
+          <span class="text-xs text-slate-400 block -mt-1 font-mono">Privacy-Preserving GNN Platform</span>
+        </div>
+      </div>
+
+      <!-- Quick status badges -->
+      <div class="hidden md:flex items-center space-x-4 text-xs font-mono">
+        <div class="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-300" id="nav-system-status">CORE ACTIVE</span>
+        </div>
+        <div class="bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 text-slate-300">
+          <i class="fa-solid fa-microchip text-blue-400 mr-1.5"></i>
+          <span id="nav-device-info">Device: CPU</span>
+        </div>
+        <div class="bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 text-slate-300">
+          <i class="fa-solid fa-lock text-purple-400 mr-1.5"></i>
+          <span>CKKS 128-bit HE</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center space-x-3">
+        <button onclick="triggerPipeline('evaluate')" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs flex items-center space-x-1.5 transition shadow-sm">
+          <i class="fa-solid fa-play text-[10px]"></i>
+          <span>Run Evaluation</span>
+        </button>
+        <a href="/api/status" target="_blank" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition" title="API Status JSON">
+          <i class="fa-solid fa-code"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <span>TRANSACTION NODES</span>
+          <i class="fa-solid fa-circle-nodes text-blue-400"></i>
+        </div>
+        <div class="mt-2 text-2xl font-bold font-mono tracking-tight text-white">203,769</div>
+        <div class="mt-1 text-[11px] text-emerald-400 flex items-center">
+          <i class="fa-solid fa-check mr-1"></i> Elliptic BTC Dataset
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <span>PAYMENT FLOW EDGES</span>
+          <i class="fa-solid fa-diagram-project text-emerald-400"></i>
+        </div>
+        <div class="mt-2 text-2xl font-bold font-mono tracking-tight text-white">234,355</div>
+        <div class="mt-1 text-[11px] text-emerald-400 flex items-center">
+          <i class="fa-solid fa-link mr-1"></i> Directed payment graph
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <span>PLAINTEXT ACCURACY</span>
+          <i class="fa-solid fa-bullseye text-indigo-400"></i>
+        </div>
+        <div class="mt-2 text-2xl font-bold font-mono tracking-tight text-white" id="kpi-accuracy">86.32%</div>
+        <div class="mt-1 text-[11px] text-slate-400">
+          Macro-F1: <span class="text-white font-semibold" id="kpi-f1">0.5674</span>
+        </div>
+      </div>
+
+      <div class="glass-card rounded-xl p-4 flex flex-col justify-between">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium">
+          <span>8-BIT QUANTIZED DELTA</span>
+          <i class="fa-solid fa-compress text-purple-400"></i>
+        </div>
+        <div class="mt-2 text-2xl font-bold font-mono tracking-tight text-white">-0.0251</div>
+        <div class="mt-1 text-[11px] text-purple-300">
+          PolyActivation (HE Ready)
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="border-b border-slate-800 flex space-x-2 text-sm overflow-x-auto pb-1">
+      <button onclick="switchTab('tab-overview')" id="btn-tab-overview" class="tab-btn px-4 py-2 font-medium rounded-lg bg-slate-800 text-blue-400 border-b-2 border-blue-500 transition flex items-center space-x-2">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Overview & Benchmarks</span>
+      </button>
+      <button onclick="switchTab('tab-graph')" id="btn-tab-graph" class="tab-btn px-4 py-2 font-medium rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+        <i class="fa-solid fa-network-wired"></i>
+        <span>Graph Visualizer</span>
+      </button>
+      <button onclick="switchTab('tab-inspector')" id="btn-tab-inspector" class="tab-btn px-4 py-2 font-medium rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+        <i class="fa-solid fa-magnifying-glass-dollar"></i>
+        <span>Fraud Risk Inspector</span>
+      </button>
+      <button onclick="switchTab('tab-he')" id="btn-tab-he" class="tab-btn px-4 py-2 font-medium rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+        <i class="fa-solid fa-key"></i>
+        <span>HE (CKKS) Simulator</span>
+      </button>
+      <button onclick="switchTab('tab-compliance')" id="btn-tab-compliance" class="tab-btn px-4 py-2 font-medium rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+        <i class="fa-solid fa-file-shield"></i>
+        <span>Compliance & Audits</span>
+      </button>
+      <button onclick="switchTab('tab-pipeline')" id="btn-tab-pipeline" class="tab-btn px-4 py-2 font-medium rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center space-x-2">
+        <i class="fa-solid fa-terminal"></i>
+        <span>Pipeline Controller</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: Overview & Benchmarks -->
+    <div id="tab-overview" class="tab-content space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Stage Comparison Chart -->
+        <div class="glass-card rounded-xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-sm flex items-center text-slate-200">
+              <i class="fa-solid fa-layer-group text-blue-400 mr-2"></i>
+              GNN Performance Across Pipeline Stages
+            </h3>
+            <span class="text-xs text-slate-400 font-mono">Test Partition (9,314 Nodes)</span>
+          </div>
+          <div class="h-64">
+            <canvas id="stageChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Training Loss & F1 Curve -->
+        <div class="glass-card rounded-xl p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-sm flex items-center text-slate-200">
+              <i class="fa-solid fa-wave-square text-emerald-400 mr-2"></i>
+              Training Progression (Loss vs Macro-F1)
+            </h3>
+            <span class="text-xs text-slate-400 font-mono">Adam Optimizer</span>
+          </div>
+          <div class="h-64">
+            <canvas id="lossChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Metrics Table -->
+      <div class="glass-card rounded-xl p-5 space-y-4">
+        <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+          <i class="fa-solid fa-table-list text-purple-400 mr-2"></i>
+          Detailed 3-Stage Evaluation Metrics
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono" id="metrics-table">
+            <thead class="text-slate-400 uppercase bg-slate-800/60 border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Stage</th>
+                <th class="py-3 px-4">Accuracy</th>
+                <th class="py-3 px-4">F1 (Macro)</th>
+                <th class="py-3 px-4">F1 (Illicit)</th>
+                <th class="py-3 px-4">Precision</th>
+                <th class="py-3 px-4">Recall</th>
+                <th class="py-3 px-4">AUC-ROC</th>
+                <th class="py-3 px-4">Latency</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800" id="metrics-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Graph Visualizer -->
+    <div id="tab-graph" class="tab-content hidden space-y-4">
+      <div class="glass-card rounded-xl p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+              <i class="fa-solid fa-network-wired text-emerald-400 mr-2"></i>
+              Interactive Bitcoin Transaction Graph Sample
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Drag to explore payment flows. Click any transaction node to inspect details.</p>
+          </div>
+          <div class="flex items-center space-x-3 text-xs">
+            <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span><span class="text-slate-300">Illicit</span></div>
+            <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span><span class="text-slate-300">Licit</span></div>
+            <div class="flex items-center space-x-1"><span class="w-3 h-3 rounded-full bg-slate-500 inline-block"></span><span class="text-slate-300">Unknown</span></div>
+            <button onclick="loadGraphSample()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition">
+              <i class="fa-solid fa-arrows-rotate mr-1"></i> Resample
+            </button>
+          </div>
+        </div>
+        <div id="network-canvas"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Fraud Risk Inspector -->
+    <div id="tab-inspector" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card rounded-xl p-5 space-y-4 md:col-span-1">
+          <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+            <i class="fa-solid fa-filter text-blue-400 mr-2"></i>
+            Query Transaction
+          </h3>
+          <p class="text-xs text-slate-400">Inspect any transaction node in the graph (0 to 203,768):</p>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-mono text-slate-400 mb-1">Transaction Node Index</label>
+              <input type="number" id="input-tx-id" value="0" min="0" max="203768" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 focus:outline-none">
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="inspectRandom(1)" class="flex-1 py-1.5 bg-red-900/40 hover:bg-red-900/60 border border-red-700/50 text-red-300 text-xs rounded-lg transition">
+                Sample Illicit
+              </button>
+              <button onclick="inspectRandom(0)" class="flex-1 py-1.5 bg-emerald-900/40 hover:bg-emerald-900/60 border border-emerald-700/50 text-emerald-300 text-xs rounded-lg transition">
+                Sample Licit
+              </button>
+            </div>
+            <button onclick="runInference()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-500/20 transition">
+              Run GNN Inference
+            </button>
+          </div>
+        </div>
+
+        <!-- Result Card -->
+        <div class="glass-card rounded-xl p-5 space-y-4 md:col-span-2 flex flex-col justify-between">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+              <i class="fa-solid fa-chart-pie text-purple-400 mr-2"></i>
+              Real-Time Inference Result
+            </h3>
+            <span id="inspect-badge" class="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-slate-800 text-slate-300">AWAITING INPUT</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 my-2">
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+              <div class="text-[11px] text-slate-400 font-mono">Fraud Probability</div>
+              <div class="text-xl font-bold font-mono text-white mt-1" id="res-score">--</div>
+            </div>
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+              <div class="text-[11px] text-slate-400 font-mono">Prediction</div>
+              <div class="text-xl font-bold font-mono text-white mt-1" id="res-pred">--</div>
+            </div>
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+              <div class="text-[11px] text-slate-400 font-mono">Ground Truth</div>
+              <div class="text-xl font-bold font-mono text-white mt-1" id="res-truth">--</div>
+            </div>
+            <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+              <div class="text-[11px] text-slate-400 font-mono">Inference Latency</div>
+              <div class="text-xl font-bold font-mono text-white mt-1" id="res-lat">-- ms</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 p-4 rounded-lg font-mono text-xs text-slate-300 space-y-1 border border-slate-800">
+            <div class="text-slate-500">// Transaction Analysis Log</div>
+            <div id="res-log-text">Select a node and click "Run GNN Inference" to evaluate live fraud probability.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: HE Simulator -->
+    <div id="tab-he" class="tab-content hidden space-y-6">
+      <div class="glass-card rounded-xl p-5 space-y-6">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+              <i class="fa-solid fa-lock text-emerald-400 mr-2"></i>
+              Homomorphic Encryption (CKKS) Pipeline Simulator
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Observe client-side encryption, server-side arithmetic, and client decryption.</p>
+          </div>
+          <button onclick="runHESimulation()" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-500/20 transition flex items-center space-x-2">
+            <i class="fa-solid fa-play"></i>
+            <span>Simulate Live Transaction</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="he-steps-container">
+          <!-- Step 1 -->
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-blue-900/60 text-blue-300 rounded">STEP 1</span>
+              <span class="text-[11px] text-slate-400 font-mono">CLIENT</span>
+            </div>
+            <h4 class="font-semibold text-sm text-slate-100">Local Feature Vector</h4>
+            <p class="text-xs text-slate-400">166 features extracted on-premises.</p>
+            <div class="p-2.5 bg-slate-950 rounded font-mono text-[11px] text-slate-300 break-all" id="he-step-1">
+              [Click "Simulate" to execute]
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-purple-900/60 text-purple-300 rounded">STEP 2</span>
+              <span class="text-[11px] text-slate-400 font-mono">CLIENT</span>
+            </div>
+            <h4 class="font-semibold text-sm text-slate-100">CKKS Encryption</h4>
+            <p class="text-xs text-slate-400">Encrypted with client public key.</p>
+            <div class="p-2.5 bg-slate-950 rounded font-mono text-[11px] text-purple-300 break-all" id="he-step-2">
+              Waiting...
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-amber-900/60 text-amber-300 rounded">STEP 3</span>
+              <span class="text-[11px] text-slate-400 font-mono">SERVER</span>
+            </div>
+            <h4 class="font-semibold text-sm text-slate-100">Encrypted GCN Layer</h4>
+            <p class="text-xs text-slate-400">HE matrix dot products + poly act.</p>
+            <div class="p-2.5 bg-slate-950 rounded font-mono text-[11px] text-amber-300 break-all" id="he-step-3">
+              Waiting...
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-emerald-900/60 text-emerald-300 rounded">STEP 4</span>
+              <span class="text-[11px] text-slate-400 font-mono">CLIENT</span>
+            </div>
+            <h4 class="font-semibold text-sm text-slate-100">Client Decryption</h4>
+            <p class="text-xs text-slate-400">Decrypted using private key only.</p>
+            <div class="p-2.5 bg-slate-950 rounded font-mono text-[11px] text-emerald-300 break-all" id="he-step-4">
+              Waiting...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: Compliance & Audits -->
+    <div id="tab-compliance" class="tab-content hidden space-y-6">
+      <div class="glass-card rounded-xl p-5 space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+              <i class="fa-solid fa-clipboard-check text-blue-400 mr-2"></i>
+              Append-Only Inference Audit Trail
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">Compliant with GDPR, RBI localization, and FATF AML reporting.</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <a href="/results/compliance_report.html" target="_blank" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span>Open HTML Report</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs font-mono" id="audit-table">
+            <thead class="text-slate-400 uppercase bg-slate-800/60 border-b border-slate-700">
+              <tr>
+                <th class="py-3 px-4">Event ID</th>
+                <th class="py-3 px-4">Timestamp (UTC)</th>
+                <th class="py-3 px-4">Institution</th>
+                <th class="py-3 px-4">Txn ID</th>
+                <th class="py-3 px-4">Fraud Score</th>
+                <th class="py-3 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800" id="audit-tbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 6: Pipeline Controller -->
+    <div id="tab-pipeline" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="glass-card rounded-xl p-5 space-y-4">
+          <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+            <i class="fa-solid fa-sliders text-emerald-400 mr-2"></i>
+            Pipeline Stages
+          </h3>
+          <div class="space-y-2.5">
+            <button onclick="triggerPipeline('preprocess')" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition text-left flex items-center justify-between">
+              <span>Step 1: Preprocess Graph</span>
+              <i class="fa-solid fa-play text-slate-500"></i>
+            </button>
+            <button onclick="triggerPipeline('train')" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition text-left flex items-center justify-between">
+              <span>Step 2: Train Plaintext GNN</span>
+              <i class="fa-solid fa-play text-slate-500"></i>
+            </button>
+            <button onclick="triggerPipeline('evaluate')" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition text-left flex items-center justify-between">
+              <span>Step 3: Evaluate All Stages</span>
+              <i class="fa-solid fa-play text-slate-500"></i>
+            </button>
+            <button onclick="triggerPipeline('all')" class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-blue-500/20 transition text-left flex items-center justify-between">
+              <span>Run Complete Pipeline</span>
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-xl p-5 space-y-3 md:col-span-2 flex flex-col">
+          <div class="flex items-center justify-between">
+            <h3 class="font-semibold text-sm text-slate-200 flex items-center">
+              <i class="fa-solid fa-terminal text-blue-400 mr-2"></i>
+              Live Execution Console
+            </h3>
+            <span id="pipeline-status-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">IDLE</span>
+          </div>
+          <div class="flex-1 bg-slate-950 p-4 rounded-lg font-mono text-xs text-slate-300 overflow-y-auto max-h-72 terminal-scroll space-y-1 border border-slate-800" id="terminal-logs">
+            <div class="text-slate-500">Ready. Select a pipeline action above to execute.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="border-t border-slate-800/80 py-4 text-center text-xs text-slate-500 font-mono">
+    CRYPTO ML &copy; 2026 &mdash; Privacy-Preserving GNN Inference on Crypto Transaction Graphs (CKKS Scheme)
+  </footer>
+
+  <!-- Main JavaScript Logic -->
+  <script>
+    let stageChartInstance = null;
+    let lossChartInstance = null;
+    let networkInstance = null;
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('bg-slate-800', 'text-blue-400', 'border-b-2', 'border-blue-500');
+        el.classList.add('text-slate-400');
+      });
+      document.getElementById(tabId).classList.remove('hidden');
+      const activeBtn = document.getElementById('btn-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('bg-slate-800', 'text-blue-400', 'border-b-2', 'border-blue-500');
+      }
+      if (tabId === 'tab-graph' && !networkInstance) {
+        loadGraphSample();
+      }
+    }
+
+    async function fetchSystemStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        document.getElementById('nav-device-info').innerText = 'Device: ' + data.device;
+        if (data.pipeline && data.pipeline.running) {
+          document.getElementById('pipeline-status-badge').innerText = 'RUNNING: ' + data.pipeline.step;
+          document.getElementById('pipeline-status-badge').className = 'text-xs font-mono px-2 py-0.5 rounded bg-amber-900/60 text-amber-300 animate-pulse';
+        } else {
+          document.getElementById('pipeline-status-badge').innerText = 'IDLE';
+          document.getElementById('pipeline-status-badge').className = 'text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400';
+        }
+        if (data.pipeline && data.pipeline.logs && data.pipeline.logs.length > 0) {
+          const logBox = document.getElementById('terminal-logs');
+          logBox.innerHTML = data.pipeline.logs.map(l => `<div>${l}</div>`).join('');
+          logBox.scrollTop = logBox.scrollHeight;
+        }
+      } catch (err) {
+        console.error("Status fetch error", err);
+      }
+    }
+
+    async function fetchMetrics() {
+      try {
+        const res = await fetch('/api/metrics');
+        const data = await res.json();
+        
+        // Populate KPI cards if stage 1 exists
+        if (data.evaluation_stages && data.evaluation_stages.length > 0) {
+          const s1 = data.evaluation_stages[0];
+          document.getElementById('kpi-accuracy').innerText = (parseFloat(s1.accuracy || 0.8632) * 100).toFixed(2) + '%';
+          document.getElementById('kpi-f1').innerText = parseFloat(s1.f1_macro || 0.5674).toFixed(4);
+        }
+
+        // Populate Table
+        const tbody = document.getElementById('metrics-tbody');
+        tbody.innerHTML = '';
+        (data.evaluation_stages || []).forEach(row => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-800/40 transition';
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-semibold text-slate-200">${row.stage || ''}</td>
+            <td class="py-3 px-4 text-emerald-400 font-bold">${row.accuracy || 'N/A'}</td>
+            <td class="py-3 px-4 text-blue-400">${row.f1_macro || 'N/A'}</td>
+            <td class="py-3 px-4 text-purple-400">${row.f1_illicit || 'N/A'}</td>
+            <td class="py-3 px-4">${row.precision || 'N/A'}</td>
+            <td class="py-3 px-4">${row.recall || 'N/A'}</td>
+            <td class="py-3 px-4 text-amber-400">${row.auc_roc || 'N/A'}</td>
+            <td class="py-3 px-4 font-mono text-slate-400">${row.latency_s ? (parseFloat(row.latency_s)*1000).toFixed(1) + ' ms' : 'N/A'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        renderCharts(data);
+      } catch (err) {
+        console.error("Metrics fetch error", err);
+      }
+    }
+
+    function renderCharts(data) {
+      // Stage Comparison Chart
+      const ctxStage = document.getElementById('stageChart').getContext('2d');
+      if (stageChartInstance) stageChartInstance.destroy();
+
+      const stages = (data.evaluation_stages || []).filter(s => s.accuracy !== 'N/A');
+      stageChartInstance = new Chart(ctxStage, {
+        type: 'bar',
+        data: {
+          labels: ['Accuracy', 'F1-Macro', 'F1-Illicit', 'AUC-ROC'],
+          datasets: stages.map((st, idx) => ({
+            label: st.stage,
+            data: [
+              parseFloat(st.accuracy || 0),
+              parseFloat(st.f1_macro || 0),
+              parseFloat(st.f1_illicit || 0),
+              parseFloat(st.auc_roc || 0)
+            ],
+            backgroundColor: idx === 0 ? 'rgba(59, 130, 246, 0.8)' : 'rgba(139, 92, 246, 0.8)',
+            borderRadius: 6
+          }))
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8' } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            y: { min: 0, max: 1.0, ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } }
+          }
+        }
+      });
+
+      // Loss / F1 Curve Chart
+      const ctxLoss = document.getElementById('lossChart').getContext('2d');
+      if (lossChartInstance) lossChartInstance.destroy();
+
+      const epochs = data.training_epochs || [];
+      lossChartInstance = new Chart(ctxLoss, {
+        type: 'line',
+        data: {
+          labels: epochs.map(e => e.epoch),
+          datasets: [
+            {
+              label: 'Loss',
+              data: epochs.map(e => e.loss),
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              yAxisID: 'yLoss',
+              tension: 0.3
+            },
+            {
+              label: 'Val F1',
+              data: epochs.map(e => e.val_f1),
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              yAxisID: 'yF1',
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8' } } },
+          scales: {
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+            yLoss: { type: 'linear', position: 'left', ticks: { color: '#ef4444' }, grid: { color: '#1e293b' } },
+            yF1: { type: 'linear', position: 'right', min: 0, max: 1.0, ticks: { color: '#10b981' }, grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    async function loadGraphSample() {
+      try {
+        const res = await fetch('/api/graph/sample?num_nodes=40');
+        const data = await res.json();
+        const container = document.getElementById('network-canvas');
+
+        const nodes = new vis.DataSet(data.nodes);
+        const edges = new vis.DataSet(data.edges);
+
+        const options = {
+          nodes: {
+            shape: 'dot',
+            size: 14,
+            font: { color: '#cbd5e1', size: 10 }
+          },
+          edges: {
+            color: { color: '#334155', highlight: '#60a5fa' },
+            arrows: { to: { enabled: true, scaleFactor: 0.6 } }
+          },
+          physics: {
+            barnesHut: { gravitationalConstant: -3000, centralGravity: 0.3, springLength: 95 },
+            stabilization: { iterations: 100 }
+          }
+        };
+
+        networkInstance = new vis.Network(container, { nodes, edges }, options);
+        networkInstance.on("click", function(params) {
+          if (params.nodes.length > 0) {
+            document.getElementById('input-tx-id').value = params.nodes[0];
+            switchTab('tab-inspector');
+            runInference();
+          }
+        });
+      } catch (err) {
+        console.error("Graph error", err);
+      }
+    }
+
+    async function runInference() {
+      const txId = document.getElementById('input-tx-id').value;
+      try {
+        const res = await fetch('/api/infer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ txId: txId })
+        });
+        const data = await res.json();
+        
+        document.getElementById('res-score').innerText = (data.fraud_score * 100).toFixed(1) + '%';
+        document.getElementById('res-pred').innerText = data.prediction;
+        document.getElementById('res-truth').innerText = data.ground_truth;
+        document.getElementById('res-lat').innerText = data.latency_ms + ' ms';
+
+        const badge = document.getElementById('inspect-badge');
+        if (data.prediction === 'ILLICIT') {
+          badge.innerText = 'ALERT: ' + data.risk_level;
+          badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-red-900/70 text-red-300 border border-red-700 animate-pulse';
+        } else {
+          badge.innerText = 'STATUS: CLEAR';
+          badge.className = 'px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-emerald-900/70 text-emerald-300 border border-emerald-700';
+        }
+
+        document.getElementById('res-log-text').innerHTML = `
+          Transaction ID: <span class="text-blue-400">${data.txId}</span> (Node #${data.node_index})<br>
+          GNN Output Logit Probability: <span class="text-white">${data.fraud_score}</span><br>
+          Decision Threshold: <span class="text-slate-400">0.50</span> &rarr; Classification: <span class="${data.prediction === 'ILLICIT' ? 'text-red-400 font-bold' : 'text-emerald-400 font-bold'}">${data.prediction}</span><br>
+          Inference Latency: <span class="text-slate-400">${data.latency_ms} ms</span>
+        `;
+      } catch (err) {
+        alert("Inference error: " + err);
+      }
+    }
+
+    function inspectRandom(cls) {
+      document.getElementById('input-tx-id').value = cls === 1 ? '15' : '1';
+      runInference();
+    }
+
+    async function runHESimulation() {
+      try {
+        const res = await fetch('/api/he/simulate', { method: 'POST' });
+        const data = await res.json();
+        
+        data.steps.forEach(st => {
+          const el = document.getElementById('he-step-' + st.step);
+          if (el) el.innerText = st.data_preview;
+        });
+      } catch (err) {
+        console.error("HE Simulation error", err);
+      }
+    }
+
+    async function fetchAuditLog() {
+      try {
+        const res = await fetch('/api/audit?limit=25');
+        const data = await res.json();
+        const tbody = document.getElementById('audit-tbody');
+        tbody.innerHTML = '';
+        (data.events || []).forEach(ev => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-800/40 transition';
+          const isAlert = ev.flagged || ev.status === 'ALERT_RAISED';
+          tr.innerHTML = `
+            <td class="py-3 px-4 font-mono text-slate-400">${ev.event_id || ''}</td>
+            <td class="py-3 px-4">${(ev.timestamp_utc || '').substring(0, 19)}</td>
+            <td class="py-3 px-4">${ev.institution_id || ''}</td>
+            <td class="py-3 px-4 font-semibold text-white">${ev.transaction_id || ''}</td>
+            <td class="py-3 px-4 font-bold ${isAlert ? 'text-red-400' : 'text-emerald-400'}">${ev.fraud_score ? parseFloat(ev.fraud_score).toFixed(4) : '--'}</td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold ${isAlert ? 'bg-red-900/60 text-red-300 border border-red-800' : 'bg-emerald-900/60 text-emerald-300 border border-emerald-800'}">
+                ${isAlert ? 'ALERT RAISED' : 'CLEAR'}
+              </span>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Audit log error", err);
+      }
+    }
+
+    async function triggerPipeline(step) {
+      try {
+        const res = await fetch('/api/pipeline/run?step=' + step, { method: 'POST' });
+        const data = await res.json();
+        switchTab('tab-pipeline');
+        fetchSystemStatus();
+      } catch (err) {
+        alert("Pipeline trigger error: " + err);
+      }
+    }
+
+    setInterval(fetchSystemStatus, 3000);
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchSystemStatus();
+      fetchMetrics();
+      fetchAuditLog();
+    });
+  </script>
+</body>
+</html>
